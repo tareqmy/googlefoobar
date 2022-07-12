@@ -3,6 +3,7 @@ package level4;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 public class RunningWithBunniesProblem {
 
@@ -36,14 +37,6 @@ public class RunningWithBunniesProblem {
         return false;
     }
 
-    public static int[] getAllBunnies(int n) {
-        int[] ans = new int[n - 2];
-        for (int i = 0; i < n - 2; i++) {
-            ans[i] = i;
-        }
-        return ans;
-    }
-
     public static void relaxation(int[][] times, int n) {
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
@@ -60,7 +53,7 @@ public class RunningWithBunniesProblem {
         int length = times.length;
         //if no bunnies return empty array
         if (length <= 2) {
-            return new int[]{};
+            return IntStream.of().toArray();
         }
 
         //apply relaxation with bellman-ford algorithm
@@ -68,7 +61,7 @@ public class RunningWithBunniesProblem {
 
         //if negative cycle exists all bunnies can be saved
         if (hasNegativeCycle(times, length)) {
-            return getAllBunnies(length);
+            return IntStream.range(0, length - 2).toArray();
         }
 
         ans = new ArrayList<>();
@@ -85,22 +78,19 @@ public class RunningWithBunniesProblem {
         //for all the bunnies index 1 to n-2
         for (int startingBunny = 1; startingBunny < length - 1; startingBunny++) {
             dfs(startingBunny, times_limit - times[0][startingBunny],
-                    times, new ArrayList<>(), visited, new StringBuilder("0"));
+                    times, new ArrayList<>(), visited);
         }
     }
 
-    public static void dfs(int currentNode, int time, int[][] times, List<Integer> list, boolean[] visited, StringBuilder chain) {
+    public static void dfs(int currentNode, int time, int[][] times, List<Integer> list, boolean[] visited) {
         int length = times.length;
 
         //reached destination
         if (currentNode == length - 1) {
             //within time. we have a solution!
-            if (time >= 0) {
-                //is this solution better than previous solution?
-                if (list.size() > ans.size()) {
-                    //we have a better solution
-                    ans = new ArrayList<>(list);
-                }
+            //is this solution better than previous solution?
+            if (time >= 0 && list.size() > ans.size()) {
+                ans = new ArrayList<>(list);
             }
             return;
         }
@@ -109,15 +99,10 @@ public class RunningWithBunniesProblem {
         visited[currentNode] = true;
         list.add(currentNode - 1); //add bunny number to end. which is 1 less than currentNode(index in the array)
         for (int nextNode = 1; nextNode < length; nextNode++) {
-            if (nextNode == currentNode) {
+            if (nextNode == currentNode || visited[nextNode]) {
                 continue;
             }
-            if (visited[nextNode]) {
-                continue;
-            }
-            chain.append("->").append(currentNode);
-            dfs(nextNode, time - times[currentNode][nextNode], times, list, visited, chain);
-            chain.delete(chain.length() - 3, chain.length());
+            dfs(nextNode, time - times[currentNode][nextNode], times, list, visited);
         }
         list.remove(list.size() - 1); //remove the last element
         visited[currentNode] = false;
